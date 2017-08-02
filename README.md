@@ -28,6 +28,10 @@ It works the same as the installation of mainnet, except for this line:
 git clone -b testnet https://github.com/Oxycoin/oxy-node.git
 ```
 
+## Important
+Please open up ports 10000 and 10001 for mainnet <br>
+Please open up ports 9998 9999 for testnet
+
 ## Authors
 - Jan <lepetitjan@icloud.com>
 - Mariusz Serek <mariusz@serek.net>
