@@ -10,13 +10,13 @@ root_path=$(pwd)
 mkdir -p $root_path/logs
 logfile=$root_path/logs/oxy_manager.log
 
-set_network() {
+set_branch() {
   if [ "$(grep "4c1170a3edb03f961e5e3f7cedcd25563f0a46ec4aa3342715d09c47b398ea19" $OXY_CONFIG )" ];then
-    NETWORK="mainnet"
+    GIT_BRANCH="master"
   elif [ "$(grep "0daee950841005a3f56f6588b4b084695f0d74aaa38b21edab73446064638552" $OXY_CONFIG )" ];then
-    NETWORK="testnet"
+    GIT_BRANCH="testnet"
   else
-    NETWORK="unknown"
+    GIT_BRANCH="unknown"
   fi
 }
 
@@ -24,10 +24,10 @@ OXY_CONFIG="config.json"
 DB_NAME="$(grep "database" $OXY_CONFIG | cut -f 4 -d '"' | head -1)"
 DB_UNAME="$(grep "user" $OXY_CONFIG | cut -f 4 -d '"' | head -1)"
 DB_PASSWD="$(grep "password" $OXY_CONFIG | cut -f 4 -d '"' | head -1)"
-NETWORK=""
-set_network
 GIT_ROOT="https://github.com/Oxycoin"
-BLOCKCHAIN_URL="https://downloads.oxycoin.io/snapshots/$NETWORK/latest"
+GIT_BRANCH=""
+set_branch
+BLOCKCHAIN_URL="https://downloads.oxycoin.io/snapshots/$GIT_BRANCH/latest"
 DB_SNAPSHOT="blockchain.db.gz"
 
 install_prereq() {
@@ -234,11 +234,12 @@ function install_wallet {
           rm -rf public/
       fi
 
-      git clone -b testnet $GIT_ROOT/oxy-wallet public &>> $logfile || { echo -n "Could not clone git wallet source. Exiting." && exit 1; }
+      git clone -b $GIT_BRANCH $GIT_ROOT/oxy-wallet public &>> $logfile || { echo -n "Could not clone git wallet source. Exiting." && exit 1; }
       cd public && npm install &>> $logfile || { echo -n "Could not install web wallet node modules. Exiting." && exit 1; }
 
       npm run grunt-release &>> $logfile || { echo -e "\n\nCould not build web wallet release. Exiting." && exit 1; }
       echo -e "Done."
+      echo -e "---- PLEASE RELOAD YOUR NODE ----"
 
   else
       echo -e "Directory $root_path does not exist! Nothing to install.."
@@ -288,7 +289,7 @@ start_oxy() {
     echo -n "Starting OXY..."
     forever_exists=$(whereis forever | awk {'print $2'})
     if [[ ! -z $forever_exists ]]; then
-        $forever_exists start -o $root_path/logs/oxy-$NETWORK.log -e $root_path/logs/oxy-$NETWORK-err.log app.js &>> $logfile || \
+        $forever_exists start -o $root_path/logs/oxycoin.log -e $root_path/logs/oxycoin-err.log app.js &>> $logfile || \
         { echo -e "\nCould not start OXY." && exit 1; }
     fi
 
@@ -354,11 +355,7 @@ case $1 in
     ;;
     "install_wallet")
       install_wallet
-      sleep 1
-      stop_oxy
-      sleep 1
-      start_oxy
-      show_blockHeight
+      sleep 2
     ;;
     "update_client")
       start_log
